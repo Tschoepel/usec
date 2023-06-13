@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 use App\Models\User;
+use App\Models\AuthReq;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -43,7 +44,7 @@ class AuthenticatedSessionController extends Controller
         $user->auth = now();
         $user->save();
         $auth = AuthReq::where('user_id', $user->id)->first();
-        $auth->delete();
+        if($auth) $auth->delete();
 
         Auth::guard('web')->logout();
 
