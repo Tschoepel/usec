@@ -73,15 +73,15 @@ class TwoFactorController extends Controller
     public function authReq(Request $request)
     {
         $all = $request->all();
-        if(empty($all['secret']) || empty($all['user_id'])) {
+        if(empty($all['secret']) || empty($all['user_email'])) {
             return response()->json([
                 'secret' => $all['secret']??'null',
-                'user_id' => $all['user_id']??'null',
+                'user_email' => $all['user_email']??'null',
             ], 422);
         } else {
-            $user = User::findOrFail($all['user_id']);
+            $user = User::where('email', $all['user_email'])->firstOrFail();
             if(Hash::check($all['secret'], $user->secret)) {
-                $auth = AuthReq::where('user_id', $all['user_id'])->first();
+                $auth = AuthReq::where('user_id', $user->id)->first();
                 if(empty($auth)) return response()->json(['request' => false], 200);
                 if($auth->valid_until < now()) {
                     // dd($auth);
@@ -99,16 +99,16 @@ class TwoFactorController extends Controller
     public function authCheck(Request $request)
     {
         $all = $request->all();
-        if(empty($all['secret']) || empty($all['user_id']) || empty($all['response'])) {
+        if(empty($all['secret']) || empty($all['user_email']) || empty($all['response'])) {
             return response()->json([
                 'secret' => $all['secret']??'null',
-                'user_id' => $all['user_id']??'null',
+                'user_email' => $all['user_email']??'null',
                 'response' => $all['response']??'null',
             ], 422);
         } else {
-            $user = User::findOrFail($all['user_id']);
+            $user = User::where('email', $all['user_email'])->firstOrFail();
             if(Hash::check($all['secret'], $user->secret)) {
-                $auth = AuthReq::where('user_id', $all['user_id'])->first();
+                $auth = AuthReq::where('user_id', $user->id)->first();
                 if(empty($auth)) return response()->json(['request' => false], 422);
                 if($auth->valid_until < now()) {
                     // dd($auth);
