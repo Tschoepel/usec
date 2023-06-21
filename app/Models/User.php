@@ -49,6 +49,6 @@ class User extends Authenticatable
 
     public function authReq()
     {
-        return $this->hasOne('App\AuthReq');
+        return $this->hasOne('App\Models\AuthReq');
     }
 }

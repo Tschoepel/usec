@@ -31,11 +31,7 @@ class TwoFactorController extends Controller
 
         $auth = AuthReq::where('user_id', Auth::user()->id)->first();
         if(isset($auth) && $auth->valid_until < now()) {
-            AuthReq::where('user_id', Auth::user()->id)->delete();
-            AuthReq::create([
-                'user_id' => Auth::user()->id,
-                'valid_until' => now()->addMinutes(10),
-            ]);
+            return Redirect::route('2fa.denied');
         }
         if(!isset($auth)) {
             AuthReq::where('user_id', Auth::user()->id)->delete();
@@ -110,9 +106,11 @@ class TwoFactorController extends Controller
             if(Hash::check($all['secret'], $user->secret)) {
                 $auth = AuthReq::where('user_id', $user->id)->first();
                 if(empty($auth)) return response()->json(['request' => false], 422);
-                if($auth->valid_until < now()) {
+                if($auth->valid_until < now() || $all['response'] == "false") {
                     // dd($auth);
-                    $auth->delete();
+                    $auth->valid_until = now();
+                    $auth->save();
+                    return response()->json(['denied' => true], 200);
                 } else if($all['response'] == "true") {
                     $auth->delete();
                     $user->auth = now()->addMinutes(2);
@@ -130,8 +128,18 @@ class TwoFactorController extends Controller
         $user = User::find($id);
         if($user && !empty($user->auth) && now() < $user->auth) {
             return response()->json(['redirect' => route('dashboard')]);
+        } else if(empty($user->authReq) || $user->authReq->valid_until < now()) {
+            return response()->json(['redirect' => route('2fa.denied')]);
         } else {
             return response()->json([]);
         }
+    }
+
+    public function denied(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return view('twofactor.denied');
     }
 }

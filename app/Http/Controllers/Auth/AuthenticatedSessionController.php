@@ -32,6 +32,9 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $auth = AuthReq::where('user_id', Auth::user()->id)->first();
+        if($auth) $auth->delete();
+
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 
